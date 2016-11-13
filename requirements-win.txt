@@ -1,0 +1,3 @@
+-r requirements.txt
+PyQt5>=5.4.0
+cx-freeze-win>=5.0.0

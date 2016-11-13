@@ -11,12 +11,14 @@ import shutil
 import json
 from argparse import ArgumentParser
 import platform
+import glob
 
-from hscommon.plat import ISOSX
+from hscommon.plat import ISOSX, ISWINDOWS, ISLINUX
 from hscommon.build import (
     print_and_do, copy_packages, build_debian_changelog,
     get_module_version, filereplace, copy, setup_package_argparser,
-    package_cocoa_app_in_dmg, copy_all
+    package_cocoa_app_in_dmg, copy_all,
+	add_to_pythonpath, copy_qt_plugins, find_in_path
 )
 
 def parse_args():
@@ -27,6 +29,75 @@ def parse_args():
 def package_cocoa(args):
     app_path = 'build/dupeGuru.app'
     package_cocoa_app_in_dmg(app_path, '.', args)
+
+def package_windows():
+    if not ISWINDOWS:
+        print("Qt packaging only works under Windows.")
+        return
+    from cx_Freeze import setup, Executable
+    from PyQt5.QtCore import QLibraryInfo
+    add_to_pythonpath('.')
+    app_version = get_module_version('core')
+    distdir = 'dist'
+
+    if op.exists(distdir):
+        shutil.rmtree(distdir)
+
+    plugin_dest = distdir
+    plugin_names = ['accessible', 'codecs', 'iconengines', 'imageformats']
+    copy_qt_plugins(plugin_names, plugin_dest)
+
+    # Since v4.2.3, cx_freeze started to falsely include tkinter in the package. We exclude it
+    # explicitly because of that.
+    options = {
+        'build_exe': {
+            'includes': 'atexit',
+            'excludes': ['tkinter'],
+            'bin_excludes': ['icudt51', 'icuin51.dll', 'icuuc51.dll'],
+            #'icon': 'images\\dgse_logo.ico',
+            'include_msvcr': True,
+        },
+        'install_exe': {
+            'install_dir': 'dist',
+        }
+    }
+
+    executables = [
+        Executable(
+            'run.py',
+            base='Win32GUI',
+            #targetDir=distdir,
+			icon='images\\dgse_logo.ico',
+            targetName='dupeGuru.exe'
+        )
+    ]
+
+    setup(
+        script_args=['install'],
+        options=options,
+        executables=executables
+    )
+
+    print("Removing useless files")
+    # Debug info that cx_freeze brings in.
+    for fn in glob.glob(op.join(distdir, '*', '*.pdb')):
+        os.remove(fn)
+    print("Copying forgotten DLLs")
+    qtlibpath = QLibraryInfo.location(QLibraryInfo.LibrariesPath)
+    #shutil.copy(op.join(qtlibpath, 'libEGL.dll'), distdir)
+    shutil.copy(find_in_path('msvcp110.dll'), distdir)
+    #AK: added this as cxfreeze is not picking it up
+    shutil.copy(find_in_path('sqlite3.dll'), distdir)
+    print("Copying the rest")
+    help_path = op.join('build', 'help')
+    print("Copying {} to dist\\help".format(help_path))
+    shutil.copytree(help_path, op.join(distdir, 'help'))
+    locale_path = op.join('build', 'locale')
+    print("Copying {} to dist\\locale".format(locale_path))
+    shutil.copytree(locale_path, op.join(distdir, 'locale'))
+
+    # NSIS has to be in your PATH for this to work
+    print_and_do('makensis scripts/dupeguru.nsi')
 
 def copy_files_to_package(destpath, packages, with_so):
     # when with_so is true, we keep .so files in the package, and otherwise, we don't. We need this
@@ -128,14 +199,17 @@ def main():
     if ui == 'cocoa':
         package_cocoa(args)
     elif ui == 'qt':
-        if not args.arch_pkg:
-            distname, _, _ = platform.dist()
-        else:
-            distname = 'arch'
-        if distname == 'arch':
-            package_arch()
-        else:
-            package_debian()
+        if ISWINDOWS:
+            package_windows()
+        elif ISLINUX:
+            if not args.arch_pkg:
+                distname, _, _ = platform.dist()
+            else:
+                distname = 'arch'
+            if distname == 'arch':
+                package_arch()
+            else:
+                package_debian()
 
 if __name__ == '__main__':
     main()

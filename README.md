@@ -1,9 +1,9 @@
 # dupeGuru
 
-[dupeGuru][dupeguru] is a cross-platform (Linux and OS X) GUI tool to find duplicate files in
+[dupeGuru][dupeguru] is a cross-platform (Linux, OS X and Windows) GUI tool to find duplicate files in
 a system. It's written mostly in Python 3 and has the peculiarity of using
 [multiple GUI toolkits][cross-toolkit], all using the same core Python code. On OS X, the UI layer
-is written in Objective-C and uses Cocoa. On Linux, it's written in Python and uses Qt5.
+is written in Objective-C and uses Cocoa. On Linux and Windows, it's written in Python and uses Qt5.
 
 ## Current status: People wanted
 
@@ -28,13 +28,6 @@ triaging, code review, critical bugfixes, releases management.
 
 But anything non-critical, I'm not going to implement it myself because I see every issue as a
 contribution opportunity.
-
-### Windows maintainer wanted
-
-As [described on my website][nowindows], dupeGuru v4.0 dropped Windows support
-because there isn't anyone to bear the burden of Windows maintenance.  If
-you're a Windows developer and are interested in taking this task, [don't
-hesitate to let me know][contrib-issue].
 
 ### OS X maintainer wanted
 
@@ -76,6 +69,12 @@ If you're on linux, you can build the ap for local development with `make`:
 
 The `Makefile` is a recent addition, however. You might have to fallback to the legacy build
 scripts.
+
+If you're on Windows, you can build using the winmake batch script
+
+    > winmake bootstrap
+    > winmake build
+    > python run.py
 
 ### Legacy build
 
