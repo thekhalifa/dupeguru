@@ -10,22 +10,31 @@
 !define APPNAME "dupeGuru"
 !define COMPANYNAME "Hardcoded Software"
 !define DESCRIPTION "dupeGuru is a tool to find duplicate files on your computer"
-!define VERSIONMAJOR 4
-!define VERSIONMINOR 0
-!define VERSIONBUILD 2
+;Version numbers will typically be passed in from the command line from the package.py script
+!ifndef VERSIONMAJOR
+  !define VERSIONMAJOR 0
+!endif
+!ifndef VERSIONMINOR
+  !define VERSIONMINOR 0
+!endif
+!ifndef VERSIONBUILD
+  !define VERSIONBUILD 0
+!endif
 !define INSTALLSIZE 37260
 !define OUTFILE "dupeGuru-${VERSIONMAJOR}.${VERSIONMINOR}.${VERSIONBUILD}-installer.exe"
 !define APPFILE "dupeGuru.exe"
 !define APPICON "..\images\dgse_logo.ico"
 !define APPLICENSE "..\LICENSE"
 !define REG_ROOT "HKLM"
+!define REG_USERROOT "HKCU"
 !define REG_APP_PATH "Software\${COMPANYNAME}\${APPNAME}"
 !define REG_UNINSTALL_PATH "Software\Microsoft\Windows\CurrentVersion\Uninstall"
+!define REG_STARTMENU_KEY "Start Menu Folder"
 !define DISTDIR "..\dist"
 
-!define HELPURL "http://www.hardcoded.net/support/" # "Support Information" link
-!define UPDATEURL "http://www.hardcoded.net/dupeguru/" # "Product Updates" link
-!define ABOUTURL "http://www.hardcoded.net/dupeguru/" # "Publisher" link
+!define HELPURL "http://www.hardcoded.net/support/"  ;"Support Information" link
+!define UPDATEURL "http://www.hardcoded.net/dupeguru/"  ;"Product Updates" link
+!define ABOUTURL "http://www.hardcoded.net/dupeguru/"  ;"Publisher" link
 
 
 ;General
@@ -49,9 +58,9 @@ Var StartMenuFolder
 !insertmacro MUI_PAGE_DIRECTORY
 
 ;Start Menu Folder Page Configuration
-!define MUI_STARTMENUPAGE_REGISTRY_ROOT "HKCU" 
-!define MUI_STARTMENUPAGE_REGISTRY_KEY "Software\${COMPANYNAME}\${APPNAME}\" 
-!define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "Start Menu Folder"
+!define MUI_STARTMENUPAGE_REGISTRY_ROOT "${REG_USERROOT}" 
+!define MUI_STARTMENUPAGE_REGISTRY_KEY "${REG_APP_PATH}" 
+!define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "${REG_STARTMENU_KEY}"
 
 !insertmacro MUI_PAGE_STARTMENU Application $StartMenuFolder
 !insertmacro MUI_PAGE_INSTFILES
@@ -79,6 +88,11 @@ function .OnInit
 	!insertmacro VerifyUserIsAdmin
 functionEnd
 
+function un.OnInit
+	setShellVarContext all
+	!insertmacro VerifyUserIsAdmin
+functionEnd
+
 
 ;--------------------------------
 ;Installer Sections
@@ -87,31 +101,32 @@ Section "!Application" AppSec
 
   SectionIn RO
   SetOutPath "$INSTDIR"
-  File /r /x help "..\dist\"
+  File /r /x help "..\dist\*.*"
   
-  #Create uninstaller
+  ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   
   !insertmacro MUI_STARTMENU_WRITE_BEGIN Application
-  #Create shortcuts
-  CreateDirectory "$SMPROGRAMS\${COMPANYNAME}"
-  CreateShortCut "$SMPROGRAMS\${COMPANYNAME}\${APPNAME}.lnk" "$INSTDIR\${APPFILE}" ""
-  CreateShortCut "$SMPROGRAMS\${COMPANYNAME}\Uninstall.lnk" "$INSTDIR\Uninstall.exe" ""
+  ;Create shortcuts
+  CreateDirectory "$SMPROGRAMS\$StartMenuFolder"
+  CreateShortCut "$SMPROGRAMS\$StartMenuFolder\${APPNAME}.lnk" "$INSTDIR\${APPFILE}" ""
+  CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
   !insertmacro MUI_STARTMENU_WRITE_END
 
   
-  # Registry information for add/remove programs
+  ; Registry information for add/remove programs
   WriteRegStr HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "DisplayName" "${APPNAME}"
-  WriteRegStr HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "DisplayVersion" "$\"${VERSIONMAJOR}.${VERSIONMINOR}.${VERSIONBUILD}$\""
+  WriteRegStr HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "DisplayVersion" "${VERSIONMAJOR}.${VERSIONMINOR}.${VERSIONBUILD}"
+  WriteRegStr HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "DisplayIcon" "$INSTDIR\${APPFILE},0"
   WriteRegDWORD HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "VersionMajor" ${VERSIONMAJOR}
   WriteRegDWORD HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "VersionMinor" ${VERSIONMINOR}
   WriteRegStr HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "Comments" "dupeGuru installer"
-  WriteRegStr HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "InstallLocation" "$\"$INSTDIR$\""
-  WriteRegStr HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "Publisher" "$\"${COMPANYNAME}$\""
-  WriteRegStr HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "Contact" "$\"${HELPURL}$\""
-  WriteRegStr HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "HelpLink" "$\"${HELPURL}$\""
-  WriteRegStr HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "URLUpdateInfo" "$\"${UPDATEURL}$\""
-  WriteRegStr HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "URLInfoAbout" "$\"${ABOUTURL}$\""
+  WriteRegStr HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "InstallLocation" "$INSTDIR"
+  WriteRegStr HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "Publisher" "${COMPANYNAME}"
+  WriteRegStr HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "Contact" "${HELPURL}"
+  WriteRegStr HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "HelpLink" "${HELPURL}"
+  WriteRegStr HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "URLUpdateInfo" "${UPDATEURL}"
+  WriteRegStr HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "URLInfoAbout" "${ABOUTURL}"
   WriteRegDWORD HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "NoModify" 1
   WriteRegDWORD HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "NoRepair" 1
   WriteRegDWORD HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}" "EstimatedSize" ${INSTALLSIZE}
@@ -123,7 +138,7 @@ SectionEnd
 
 
 Section "Help Files" HelpSec
-  SetOutPath "$INSTDIR\help"
+  SetOutPath "$INSTDIR"
   File /r "${DISTDIR}\help"
 SectionEnd
 
@@ -143,10 +158,12 @@ Section Uninstall
 
   RMDir /r "$INSTDIR"
   
-  Delete "$SMPROGRAMS\${COMPANYNAME}\${APPNAME}.lnk"
-  Delete "$SMPROGRAMS\${COMPANYNAME}\Uninstall.lnk"
-  RMDir "$SMPROGRAMS\${COMPANYNAME}"
+  !insertmacro MUI_STARTMENU_GETFOLDER Application $StartMenuFolder
+  Delete "$SMPROGRAMS\$StartMenuFolder\${APPNAME}.lnk"
+  Delete "$SMPROGRAMS\$StartMenuFolder\Uninstall.lnk"
+  RMDir "$SMPROGRAMS\$StartMenuFolder"
 
+  DeleteRegKey /ifempty "${REG_USERROOT}" "${REG_APP_PATH}"
   DeleteRegKey HKLM "${REG_UNINSTALL_PATH}\${COMPANYNAME} ${APPNAME}"
   
 SectionEnd

@@ -29,6 +29,13 @@ triaging, code review, critical bugfixes, releases management.
 But anything non-critical, I'm not going to implement it myself because I see every issue as a
 contribution opportunity.
 
+### Windows maintainer - more wanted
+
+Initially, as [described on my website][nowindows], dupeGuru v4.0 dropped Windows support
+because there wasn't anyone to bear the burden of Windows maintenance. Whilst we have one
+person contributing to Windows support, if you develop on Windows and are interested in 
+taking on this task, [don't hesitate to let me know][contrib-issue].
+
 ### OS X maintainer wanted
 
 My Mac Mini is already a couple of years old and is likely to be my last Apple purchase. When it
@@ -130,6 +137,12 @@ For OS X:
     $ source env/bin/activate
     $ pip install -r requirements-osx.txt
 
+For Windows:
+
+    > python -m venv env
+	> env\Scripts\activate.bat
+	> env\Scripts\pip.exe install -r requirements-win.txt
+
 ### Actual building and running
 
 With your virtualenv activated, you can build and run dupeGuru with these commands:
@@ -141,10 +154,23 @@ You can also package dupeGuru into an installable package with:
 
     $ python package.py
 
+For Windows, this script requires NSIS compiler to be present on the `PATH`, see `Generate Windows Installer` section
 
 ### Generate Ubuntu packages
 
     $ bash -c "pyvenv --system-site-packages env && source env/bin/activate && pip install -r requirements.txt && python3 build.py --clean && python3 package.py"
+
+### Generate Windows Installer
+
+dupeGuru switched to using [Nullsoft Scriptable Install System (NSIS)][nsis] for installation.
+This is a prerequisite for packaging dupeGuru, however, it is run as the last step, so the dist directory
+will still contain all the files necessary.
+
+The winmake.bat script will add the standard NSIS location (i.e. `C:\Program Files (x86)\NSIS`) to the `PATH` before
+calling the `package.py` script to compile the NSIS script `scripts/dupeguru.nsi`
+If you have NSIS installed elsewhere, you have to change that location at the top of the winmake.bat script or
+include it in the PATH environment variable.
+
 
 ### Running tests
 
@@ -167,4 +193,4 @@ virtualenv and then `py.test core hscommon`
 [pyqt]: http://www.riverbankcomputing.com
 [pyenv]: https://github.com/yyuu/pyenv
 [tox]: https://tox.readthedocs.org/en/latest/
-
+[nsis]: http://nsis.sourceforge.net

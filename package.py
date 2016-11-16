@@ -97,7 +97,10 @@ def package_windows():
     shutil.copytree(locale_path, op.join(distdir, 'locale'))
 
     # NSIS has to be in your PATH for this to work
-    print_and_do('makensis scripts/dupeguru.nsi')
+    versionlist = app_version.split('.') if len(app_version) >= 5 else '0.0.0'
+    versionparams = '/DVERSIONMAJOR={} /DVERSIONMINOR={} /DVERSIONBUILD={}'.format(versionlist[0], versionlist[1], versionlist[2])
+    nsis_cmd = 'makensis ' + versionparams + ' scripts/dupeguru.nsi'
+    print_and_do(nsis_cmd)
 
 def copy_files_to_package(destpath, packages, with_so):
     # when with_so is true, we keep .so files in the package, and otherwise, we don't. We need this
